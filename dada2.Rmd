@@ -76,7 +76,7 @@ filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
 
 Filter reads
 ```{r}
-filt.out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, trimLeft = , truncLen = c(),
+filt.out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, trimLeft = 10, truncLen = c(190, 150),
                           maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE,
                           compress = TRUE, multithread = TRUE)
 ```
@@ -148,3 +148,16 @@ sum(seqtab.nochim)/sum(seqtab2)
 ```
 
 Track reads through the pipeline
+```{r}
+getN <- function(x) sum(getUniques(x))
+filt.out %>%
+  as_tibble(rownames = "filename") %>%
+  mutate(sample = str_replace(filename, forward_fastq_suffix, "")) %>%
+  select(sample, input = reads.in, filtered = reads.out) ->
+  track
+
+sapply(dadaFs, getN) %>%
+  enframe(name = "sample", value = "denoised") ->
+  denoised
+track %<>% full_join(denoised, by = c("sample"))
+```
