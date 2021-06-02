@@ -194,3 +194,39 @@ taxa.print <- taxa
 rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
+
+#Make Phyloseq Object
+Load Metadata
+```{r}
+metadata.df = read_tsv(map.file) %>%
+  dplyr::rename(Sample = "#SampleID") %>%
+  column_to_rownames("Sample") %>%
+  as.data.frame()
+
+metadata.df
+```
+
+Construct phyloseq object
+```{r}
+otus = otu_table(seqtab.nochim, taxa_are_rows = FALSE)
+sd = sample_data(metadata.df)
+ps <- phyloseq(otus, sd, tax_table(taxa))
+
+ps
+```
+
+Save phyloseq object as RDS
+```{r}
+write_rds(ps, ps.rds)
+```
+
+Confirm that the RDS is usable
+```{r}
+loaded.ps = read_rds(ps.rds)
+print(loaded.ps)
+```
+
+#Session Info
+```{r}
+sessionInfo()
+```
