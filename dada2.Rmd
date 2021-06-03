@@ -15,6 +15,7 @@ library(magrittr)
 library(ggplot2)
 library(tidyr)
 library(phyloseq)
+library(dplyr)
 ```
 
 #Setup
@@ -119,7 +120,7 @@ mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
 ```
 
 ```{r}
-head(mergers)
+head(mergers[[2]])
 ```
 
 #Further Processing
@@ -134,7 +135,7 @@ table(nchar(getSequences(seqtab)))
 ```
 
 ```{r}
-seqtab2 <- seqtab[, nchar(colnames(seqtab)) %in% seq(,)]
+seqtab2 <- seqtab[, nchar(colnames(seqtab)) %in% seq(230,235)]
 ```
 
 Remove chimeras
@@ -189,7 +190,7 @@ track %>%
 
 ##Assign Taxonomy
 ```{r}
-taxa <- assignTaxonomy(seqtab.nochim, silva.red, multithread = TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, silva.ref, multithread = TRUE)
 taxa.print <- taxa
 rownames(taxa.print) <- NULL
 head(taxa.print)
