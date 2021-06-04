@@ -1,0 +1,153 @@
+---
+title: "Akkermansia ASVs"
+author: "Katherine Mueller"
+date: "6/4/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(phyloseq)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(cowplot)
+```
+
+#Define Path
+```{r}
+ms.rds <- "../../Data/Analysis/MS.rds"
+out.dir <- "../../Data/Analysis"
+```
+
+#Load and Check Phyloseq Object
+```{r}
+ms.ps = read_rds(ms.rds)
+print(ms.ps)
+```
+
+```{r}
+sample_variables(ms.ps)
+```
+
+#Relative Abundance
+```{r}
+ms.rel.ps <- ms.ps %>%
+  transform_sample_counts(function(x) x/sum(x))
+```
+
+#Akkermansia ASV Identification
+```{r}
+akks.ps <- ms.rel.ps %>%
+  subset_taxa(Genus == "Akkermansia")
+print(akks.ps)
+```
+
+Vizualize abundances of all four ASVs
+```{r}
+#Get dataframe for akk ASV abundances
+all_akks <- akks.ps %>%
+  otu_table() %>%
+  as.data.frame()
+
+#Make the dataframe long for plotting
+akks.long <- all_akks %>%
+  gather(ASV, Abundance)
+
+#Plot Akk ASV abundances
+akks.boxplot <- akks.long %>%
+  ggplot(aes(x = ASV, y = Abundance))+
+  geom_point() +
+  geom_jitter()
+akks.boxplot
+```
+
+Filter for Akk ASVs at a means abundance of at least 0.01%. Based on the above plot, this should probably result in three ASVs worth looking into.
+```{r}
+mean_cutoff = 0.0001
+mean_test = function(x) {
+  mean(x) >= mean_cutoff
+}
+
+akks.0001mean.ps <- akks.ps %>%
+  filter_taxa(mean_test, prune = TRUE)
+print(akks.0001mean.ps)
+```
+
+I don't understand why the filter is returning an empty phyloseq object. It also returns empty even if the cutoff is set to zero.
+```{r}
+ASV_sequences <- akks.ps %>%
+  otu_table() %>%
+  as.data.frame() %>%
+  colnames()
+```
+
+```{r}
+ASV1.boxplot <- akks.long %>%
+  filter(ASV == ASV_sequences[1]) %>%
+  ggplot(aes(x = ASV, y = Abundance))+
+  geom_point() +
+  geom_jitter()
+ASV2.boxplot <- akks.long %>%
+  filter(ASV == ASV_sequences[2]) %>%
+  ggplot(aes(x = ASV, y = Abundance))+
+  geom_point() +
+  geom_jitter()
+ASV3.boxplot <- akks.long %>%
+  filter(ASV == ASV_sequences[3]) %>%
+  ggplot(aes(x = ASV, y = Abundance))+
+  geom_point() +
+  geom_jitter()
+ASV4.boxplot <- akks.long %>%
+  filter(ASV == ASV_sequences[4]) %>%
+  ggplot(aes(x = ASV, y = Abundance))+
+  geom_point() +
+  geom_jitter()
+
+plot_grid(ASV1.boxplot, ASV2.boxplot, ASV3.boxplot, ASV4.boxplot, labels = c(1,2,3,4))
+```
+
+It looks like the fourth ASV is the one that I expected to get rid of. I'll check mean abundances for all of them manually.
+```{r}
+mean(akks.long$Abundance[akks.long$ASV == ASV_sequences[1]])
+head((akks.long$Abundance[akks.long$ASV == ASV_sequences[1]]))
+```
+```{r}
+abundances1 <- (akks.long$Abundance[akks.long$ASV == ASV_sequences[1]])
+typeof(abundances1)
+abundances1
+sum(abundances1)
+```
+
+Is it because of the one Nan?
+```{r}
+abundances1[is.na(abundances1)] <- 0
+abundances1
+mean(abundances1)
+```
+
+Taking out the NA fixed the mean issue, so I'll go ahead and double check the other three.
+```{r}
+abundances2 <- (akks.long$Abundance[akks.long$ASV == ASV_sequences[2]])
+abundances2[is.na(abundances2)] <- 0
+mean(abundances2)
+
+abundances3 <- (akks.long$Abundance[akks.long$ASV == ASV_sequences[3]])
+abundances3[is.na(abundances3)] <- 0
+mean(abundances3)
+
+abundances4 <- (akks.long$Abundance[akks.long$ASV == ASV_sequences[4]])
+abundances4[is.na(abundances4)] <- 0
+mean(abundances4)
+```
+
+My suspicion that the first three ASVs, but not the fourth, would pass the 0.01% filter was correct. I'm not sure how I could fix the NA issue in the phyloseq object to avoid this in the future though.
+Get sequences
+```{r}
+akks0001 <- akks.ps %>%
+  otu_table() %>%
+  as.data.frame() %>%
+  select(!ASV_sequences[4])
+```
+
