@@ -30,3 +30,85 @@ print(phylogroups.ps)
 sample_variables(phylogroups.ps)
 ```
 
+##Analysis
+#Disease states
+Determine which host disease states were recorded
+```{r}
+unique(sample_data(phylogroups.ps)$Host_disease)
+```
+
+Simplify disease state names
+```{r}
+sample_data(phylogroups.ps)$Host_disease[sample_data(phylogroups.ps)$Host_disease == "2RelapsingRemittingMS"] <- "RelapsingRemitting"
+sample_data(phylogroups.ps)$Host_disease[sample_data(phylogroups.ps)$Host_disease == "1HealthyControl"] <- "Healthy"
+sample_data(phylogroups.ps)$Host_disease[sample_data(phylogroups.ps)$Host_disease == "3SecondaryProgressiveMS"] <- "SecondaryProgressive"
+sample_data(phylogroups.ps)$Host_disease[sample_data(phylogroups.ps)$Host_disease == "4PrimaryProgressiveMS"] <- "PrimaryProgressive"
+```
+
+```{r}
+unique(sample_data(phylogroups.ps)$Host_disease)
+```
+
+```{r}
+sample_data <- sample_data(phylogroups.ps) %>%
+  as.matrix() %>%
+  as.data.frame()
+sample_data$Akk_abund <- as.numeric(sample_data$Akk_abund)
+sample_data$AmI_abund <- as.numeric(sample_data$AmI_abund)
+sample_data$AmII_abund <- as.numeric(sample_data$AmII_abund)
+sample_data$AmIV_abund <- as.numeric(sample_data$AmIV_abund)
+```
+
+#Is ANOVA appropriate?
+```{r}
+akk_aov <- aov(Akk_abund ~ Host_disease,
+               data = sample_data)
+
+AmI_aov <- aov(AmI_abund ~ Host_disease,
+               data = sample_data)
+
+AmII_aov <- aov(AmII_abund ~ Host_disease,
+                data = sample_data)
+
+AmIV_aov <- aov(AmIV_abund ~ Host_disease,
+                data = sample_data)
+
+hist(akk_aov$residuals)
+hist(AmI_aov$residuals)
+hist(AmII_aov$residuals)
+hist(AmIV_aov$residuals)
+```
+
+```{r}
+qqPlot(akk_aov$residuals, id = FALSE)
+qqPlot(AmI_aov$residuals, id = FALSE)
+qqPlot(AmII_aov$residuals, id = FALSE)
+qqPlot(AmIV_aov$residuals, id = FALSE)
+```
+Normality assumptions not met for ANOVA
+
+#Non-parametric testing
+```{r}
+kruskal.test(Akk_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmI_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmII_abund ~ Host_disease, data = sample_data)
+
+kruskal.test(AmIV_abund ~ Host_disease, data = sample_data)
+```
+
+No significant results for AmII and AmIV, but post-hoc pairwise comparisons can be used for all akks and AmI
+```{r}
+pairwise.wilcox.test(sample_data$Akk_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+
+pairwise.wilcox.test(sample_data$AmI_abund, sample_data$Host_disease,
+                     p.adjust.method = "BH")
+```
+
+#Export dataframe for plotting in Prism
+```{r}
+write.csv(sample_data, file.path(out.dir, "MS_phylogroup_dataframe.csv"))
+```
+
