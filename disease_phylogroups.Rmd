@@ -1,0 +1,32 @@
+---
+title: "MS and Akkermansia Phylogroups"
+author: "Katherine Mueller"
+date: "6/8/2021"
+output: html_document
+---
+
+#Load Libraries
+```{r}
+library(phyloseq)
+library(cowplot)
+library(car)
+library(dplyr)
+library(readr)
+```
+
+#Define Paths
+```{r}
+phylogroups.rds = "../../Data/Analysis/MS_wPhylogroups.rds"
+out.dir = "../../Data/Analysis"
+```
+
+#Load and Check Phyloseq Object
+```{r}
+phylogroups.ps = read_rds(phylogroups.rds)
+print(phylogroups.ps)
+```
+
+```{r}
+sample_variables(phylogroups.ps)
+```
+
