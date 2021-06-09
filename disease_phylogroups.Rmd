@@ -30,7 +30,7 @@ print(phylogroups.ps)
 sample_variables(phylogroups.ps)
 ```
 
-##Analysis
+##Analysis of Disease States
 #Disease states
 Determine which host disease states were recorded
 ```{r}
@@ -112,3 +112,4 @@ pairwise.wilcox.test(sample_data$AmI_abund, sample_data$Host_disease,
 write.csv(sample_data, file.path(out.dir, "MS_phylogroup_dataframe.csv"))
 ```
 
+##Analysis of EDSS
